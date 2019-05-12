@@ -87,3 +87,68 @@ class Button(object):
 
 	def Read(self):
 		return self.button.value()
+
+class ServoMoto(object):
+	SERVO1 = machine.Pin(machine.Pin.board.SERVO1)
+	SERVO2 = machine.Pin(machine.Pin.board.SERVO2)
+	Positional = 0
+	Continuous = 1
+
+	def __init__( self, pin):
+		self.pin = pin
+		self.timer = Timer(2, freq=(1 / 0.020))
+		
+		# SERVO1 PA1 channel 2
+		# SERVO2 PA0 channel 1
+		ch = 2;
+		if (pin == ServoMoto.SERVO2): 
+			ch = 1
+
+		self.channel = self.timer.channel(ch, Timer.PWM, pin=self.pin)
+		self.channel.pulse_width_percent(0)
+		self.ConfigurePulseParameters(1.0, 2.0)
+		self.ConfigureAsPositional(False)
+
+	def ConfigureAsPositional(self, inverted):
+		self.type = ServoMoto.Positional
+		self.invertServo = inverted
+
+	def ConfigureAsContinuous(self, inverted):
+		self.type = ServoMoto.Continuous
+		self.invertServo = inverted
+
+	def ConfigurePulseParameters(self, minimumPulseWidth, maximumPulseWidth):
+		self.minPulseLength = minimumPulseWidth * 1.0
+		self.maxPulseLength = maximumPulseWidth * 1.0
+		
+	def Set(self, value):
+		if (self.type == ServoMoto.Positional):
+			self.__FixedSetPosition__(value)
+		else:
+			self.__ContiniousSetSpeed__(value)
+
+	def __ContiniousSetSpeed__(self, speed):
+		if speed < -100 or speed > 100:
+			print("speed", "degrees must be between -100 and 100.")
+
+		speed += 100
+		d = speed / 200.0 * 180
+		self.__FixedSetPosition__(d)
+
+	def __FixedSetPosition__(self, position):
+		position = position * 1.0
+		if position < 0 or position > 180 :
+			print("degrees", "degrees must be between 0 and 180.")
+
+		if (self.invertServo == True):
+			position = 180 - position
+
+		# Typically, with 50 hz, 0 degree is 0.05 and 180 degrees is 0.10
+		# double duty = ((position / 180.0) * (0.10 - 0.05)) + 0.05
+		duty = ((position / 180.0) * (self.maxPulseLength / 20 - self.minPulseLength / 20)) + self.minPulseLength / 20
+
+		# TinyCLR 0 < duty < 1. Convert to 0->100
+		self.channel.pulse_width_percent(duty * 100)
+
+	def Stop(self):
+		self.channel.pulse_width_percent(0)
