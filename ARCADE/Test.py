@@ -89,8 +89,9 @@ class Button(object):
 		return self.button.value()
 
 class ServoMoto(object):
-	SERVO1 = machine.Pin(machine.Pin.board.SERVO1)
-	SERVO2 = machine.Pin(machine.Pin.board.SERVO2)
+	# There is a bug, Servo1 and Servo2 are swapped.
+	SERVO2 = machine.Pin(machine.Pin.board.SERVO1)
+	SERVO1 = machine.Pin(machine.Pin.board.SERVO2)
 	Positional = 0
 	Continuous = 1
 
